@@ -1,0 +1,7 @@
+.env
+.env.local
+dist/
+/cobalt-telegram-bot
+*.log
+*.tmp
+.DS_Store
