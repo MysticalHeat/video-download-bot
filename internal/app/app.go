@@ -399,23 +399,54 @@ func (a *App) isReplyToBot(message *tgbotapi.Message) bool {
 }
 
 func (a *App) hasBotMention(message *tgbotapi.Message) bool {
-	username := strings.ToLower(a.bot.Self.UserName)
-	if username == "" {
-		return false
-	}
-	needle := "@" + username
-	text := strings.ToLower(messageText(message))
-	if strings.Contains(text, needle) {
-		return true
-	}
+	username := strings.ToLower(strings.TrimSpace(a.bot.Self.UserName))
+	text := strings.TrimSpace(message.Text)
+	caption := strings.TrimSpace(message.Caption)
 
-	for _, entity := range append(message.Entities, message.CaptionEntities...) {
-		if entity.Type == "text_mention" {
+	if username != "" {
+		needle := "@" + username
+		if strings.Contains(strings.ToLower(text), needle) || strings.Contains(strings.ToLower(caption), needle) {
 			return true
 		}
 	}
 
+	if a.entityMentionsBot(text, message.Entities, username) || a.entityMentionsBot(caption, message.CaptionEntities, username) {
+		return true
+	}
+
 	return false
+}
+
+func (a *App) entityMentionsBot(text string, entities []tgbotapi.MessageEntity, username string) bool {
+	for _, entity := range entities {
+		switch entity.Type {
+		case "mention":
+			mentioned := strings.ToLower(entityText(text, entity.Offset, entity.Length))
+			if mentioned == "@"+username {
+				return true
+			}
+		case "text_mention":
+			if entity.User != nil && entity.User.ID == a.bot.Self.ID {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func entityText(text string, offset, length int) string {
+	runes := []rune(text)
+	if offset < 0 || length <= 0 || offset >= len(runes) {
+		return ""
+	}
+
+	end := offset + length
+	if end > len(runes) {
+		end = len(runes)
+	}
+
+	return string(runes[offset:end])
 }
 
 func isTikTokURL(rawURL string) bool {
