@@ -67,10 +67,28 @@ go run ./cmd/cobalt-telegram-bot
 ## Сборка
 
 ```bash
+make build
+```
+
+Или вручную:
+
+```bash
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/cobalt-telegram-bot ./cmd/cobalt-telegram-bot
 ```
 
 ## Прод-запуск через systemd
+
+Быстрый деплой одной командой:
+
+```bash
+make deploy
+```
+
+Или напрямую скриптом:
+
+```bash
+./scripts/deploy.sh
+```
 
 Шаблон юнита:
 
@@ -89,6 +107,14 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/cobalt-telegram-bot ./cmd
 ```bash
 systemctl restart cobalt-telegram-bot
 journalctl -u cobalt-telegram-bot -f
+```
+
+Ручной деплой, если нужен без скрипта:
+
+```bash
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/cobalt-telegram-bot ./cmd/cobalt-telegram-bot
+rsync -av --progress dist/cobalt-telegram-bot NomliHost:/tmp/cobalt-telegram-bot.new
+ssh NomliHost "install -m 755 /tmp/cobalt-telegram-bot.new /opt/cobalt-telegram-bot/cobalt-telegram-bot && rm -f /tmp/cobalt-telegram-bot.new && systemctl restart cobalt-telegram-bot && systemctl status cobalt-telegram-bot --no-pager"
 ```
 
 ## Работа в группах
